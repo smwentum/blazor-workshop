@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject HttpClient HttpClient
+@inject IUriHelper UriHelper
 
 <h1>Blazing Pizzas</h1>
 
@@ -9,8 +10,8 @@
         @if (specials != null)
         {
             @foreach (var special in specials)
-            { 
-                <li @onclick="@(() => showConfigurePizzaDialog(special))"    style="background-image: url('@special.ImageUrl')">
+            {
+                <li @onclick="@(() => showConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         @special.Description
@@ -28,12 +29,12 @@
             <h2>Your Order</h2>
             @foreach (var configuredPizza in order.Pizzas)
             {
-                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemoved="@(() => RemoveConfiguredPizza(configuredPizza))"/>
+                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemoved="@(() => RemoveConfiguredPizza(configuredPizza))" />
             }
         </div>
     }
     else
-    { 
+    {
         <div class="empty-cart">Choose a pizza<br />to get started</div>
     }
     <div class="order-total @(order.Pizzas.Any() ? "":"hidden")">
@@ -47,11 +48,10 @@
 
 
 @if (showConfigureDialog)
-{ 
-    <ConfigurePizzaDialog 
-                          Pizza="configuringPizza"
+{
+    <ConfigurePizzaDialog Pizza="configuringPizza"
                           OnCancel="CancelConfigurePizzaDialog"
-                          OnConfirm="ConfirmConfigurePizzaDialog"/>
+                          OnConfirm="ConfirmConfigurePizzaDialog" />
 }
 
 
@@ -67,7 +67,7 @@
         configuringPizza = new Pizza()
         {
 
-            Special =special,
+            Special = special,
             SpecialId = special.Id,
             Size = Pizza.DefaultSize,
             Toppings = new List<PizzaTopping>()
@@ -101,10 +101,12 @@
         order.Pizzas.Remove(pizza);
     }
 
-    async Task PlaceOrder()
+   async Task PlaceOrder()
     {
-        await HttpClient.PostJsonAsync("orders", order);
+        var newOrderId = await HttpClient.PostJsonAsync<int>("orders", order);
         order = new Order();
+
+        UriHelper.NavigateTo($"myorders/{newOrderId}");
     }
 
 }
